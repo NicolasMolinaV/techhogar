@@ -20,7 +20,7 @@ contenida en documentos internos de la empresa.
 
 1.  Clonar el repositorio:
 
-git clone https://github.com/TU_USUARIO/techhogar.git cd techhogar
+git clone https://github.com/NicolasMolinaV/techhogar.git cd techhogar
 
 2.  Crear entorno virtual:
 
