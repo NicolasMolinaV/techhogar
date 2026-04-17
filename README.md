@@ -97,9 +97,3 @@ techhogar/ ├── app.py ├── ingest.py ├── requirements.txt ├�
 │ └── despachos.txt
 
 ------------------------------------------------------------------------
-
-## Notas
-
--   El archivo `.env` no se incluye en el repositorio por seguridad
--   Los datos utilizados son simulados para fines académicos
--   El sistema implementa un pipeline RAG básico funcional
