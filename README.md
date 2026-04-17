@@ -17,24 +17,27 @@ contenida en documentos internos de la empresa.
 ------------------------------------------------------------------------
 
 ## Configuración
+1. Crear una carpeta y abrirla en visual
 
-1.  Clonar el repositorio:
+2.  Clonar el repositorio:
 
-git clone https://github.com/NicolasMolinaV/techhogar.git cd techhogar
+git clone https://github.com/NicolasMolinaV/techhogar.git 
 
-2.  Crear entorno virtual:
+3. Entrar a la carpeta cd techhogar
+
+4.  Crear entorno virtual:
 
 python -m venv venv
 
-3.  Activar entorno virtual:
+5.  Activar entorno virtual:
 
 venv\Scripts\activate
 
-4.  Instalar dependencias:
+6.  Instalar dependencias:
 
 pip install -r requirements.txt
 
-5.  Crear archivo `.env` en la raíz del proyecto:
+7.  Crear archivo `.env` en la raíz del proyecto:
 
 GITHUB_TOKEN=tu_token 
 
