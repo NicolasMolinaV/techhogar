@@ -1,0 +1,13 @@
+Catálogo de productos TechHogar
+
+Producto: Smart TV Samsung 55 pulgadas
+Marca: Samsung
+Precio: 399990
+Stock: Disponible
+Garantía: 12 meses
+
+Producto: iPhone 14 128GB
+Marca: Apple
+Precio: 699990
+Stock: Disponible
+Garantía: 12 meses
