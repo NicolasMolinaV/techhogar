@@ -37,9 +37,13 @@ pip install -r requirements.txt
 5.  Crear archivo `.env` en la raíz del proyecto:
 
 GITHUB_TOKEN=tu_token 
+
 CHAT_MODEL=openai/gpt-4o
+
 EMBEDDING_MODEL=openai/text-embedding-3-small
+
 GITHUB_CHAT_BASE_URL=https://models.github.ai/inference
+
 GITHUB_EMBEDDINGS_URL=https://models.github.ai/inference/embeddings
 
 ------------------------------------------------------------------------
