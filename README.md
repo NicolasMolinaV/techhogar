@@ -28,7 +28,7 @@ python -m venv venv
 
 3.  Activar entorno virtual:
 
-venv`\Scripts`{=tex}`\activate`{=tex}
+venv\Scripts\activate
 
 4.  Instalar dependencias:
 
