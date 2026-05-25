@@ -102,19 +102,32 @@ def herramienta_calculadora(pregunta):
         return "No se pudo identificar una operación matemática válida."
     except Exception:
         return "No se pudo realizar el cálculo."
+    
+def herramienta_escritura(pregunta):
+    return f"""
+Resumen generado para derivación a soporte humano:
+
+El cliente realizó la siguiente solicitud:
+{pregunta}
+
+El caso debe ser revisado por un agente especializado.
+"""
 
 
 def decidir_herramienta(pregunta):
     pregunta_lower = pregunta.lower()
 
+    if any(palabra in pregunta_lower for palabra in ["reclamo", "problema", "soporte", "ayuda humana", "derivar"]):
+        return "escritura"
+
     if any(palabra in pregunta_lower for palabra in ["descuento", "%", "calcula", "precio final"]):
         return "calculadora"
 
+    if any(palabra in pregunta_lower for palabra in ["y cuánto", "y cuanto", "y eso", "también", "tambien", "y el", "y la"]):
+        return "memoria_rag"
+
     if any(palabra in pregunta_lower for palabra in ["garantía", "garantia", "stock", "devolución", "devolucion", "despacho", "producto", "iphone", "samsung"]):
         return "rag"
-
-    if any(palabra in pregunta_lower for palabra in ["y cuánto", "y cuanto", "y eso", "también", "tambien"]):
-        return "memoria_rag"
 
     return "rag"
 
@@ -161,11 +174,16 @@ def main():
 
         herramienta = decidir_herramienta(pregunta)
 
-        if herramienta == "calculadora":
+        if herramienta == "escritura":
+            contexto = herramienta_escritura(pregunta)
+
+        elif herramienta == "calculadora":
             contexto = herramienta_calculadora(pregunta)
+
         elif herramienta == "memoria_rag":
             pregunta_con_memoria = " ".join(memoria[-4:]) + " " + pregunta
             contexto = herramienta_rag(pregunta_con_memoria)
+
         else:
             contexto = herramienta_rag(pregunta)
 
