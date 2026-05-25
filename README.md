@@ -80,9 +80,34 @@ Este modo ejecuta el agente inteligente con:
 
 ------------------------------------------------------------------------
 
-### Ejemplos del agente funcional
+------------------------------------------------------------------------
 
-Consulta con memoria:
+## Herramientas del agente
+
+El agente utiliza distintas herramientas dependiendo del tipo de consulta realizada por el usuario.
+
+| Herramienta | Función |
+|---|---|
+| RAG | Busca información dentro de los documentos de la empresa |
+| Calculadora | Realiza cálculos matemáticos y descuentos |
+| Escritura | Genera resúmenes para derivación a soporte humano |
+| Memoria | Mantiene continuidad en conversaciones prolongadas |
+
+------------------------------------------------------------------------
+
+## Ejemplos del agente funcional
+
+### Consulta documental
+
+Cliente:
+¿Cuánto dura la garantía de Samsung?
+
+Herramienta usada:
+rag
+
+------------------------------------------------------------------------
+
+### Consulta con memoria
 
 Cliente:
 ¿Cuánto dura la garantía de Samsung?
@@ -90,13 +115,32 @@ Cliente:
 Luego:
 ¿Y cuánto demora el despacho?
 
-El agente mantiene el contexto de la conversación.
+Herramienta usada:
+memoria_rag
 
-Consulta matemática:
+El agente mantiene el contexto de la conversación para responder correctamente.
 
+------------------------------------------------------------------------
+
+### Consulta matemática
+
+Cliente:
 Si un producto vale 699990 y tiene 15% de descuento, cuánto queda?
 
-El agente utiliza automáticamente la herramienta calculadora.
+Herramienta usada:
+calculadora
+
+------------------------------------------------------------------------
+
+### Consulta de derivación
+
+Cliente:
+Tengo un reclamo y necesito ayuda humana
+
+Herramienta usada:
+escritura
+
+El agente genera automáticamente un resumen para derivar el caso a soporte especializado.
 
 ------------------------------------------------------------------------
 
