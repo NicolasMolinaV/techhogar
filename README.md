@@ -1,10 +1,8 @@
-# TechHogar RAG
+# TechHogar Agent
 
-Prototipo de sistema de atención al cliente basado en LLM y arquitectura
-RAG (Retrieval-Augmented Generation).
+Sistema inteligente de atención al cliente basado en modelos de lenguaje (LLM), arquitectura RAG y agentes funcionales.
 
-Este sistema permite responder consultas utilizando información
-contenida en documentos internos de la empresa.
+El sistema permite responder consultas utilizando información contenida en documentos internos de la empresa, incorporando recuperación semántica, memoria de conversación y herramientas de razonamiento.
 
 ------------------------------------------------------------------------
 
@@ -70,32 +68,53 @@ El sistema quedará en modo interactivo para ingresar consultas.
 
 ------------------------------------------------------------------------
 
-## Ejemplos de uso
+### Paso 3: Ejecutar agente funcional
 
--   ¿Cuánto dura la garantía de Samsung?
--   ¿Hay stock de iPhone 14?
--   ¿Cuánto demora un despacho a regiones?
--   ¿Puedo devolver un producto?
+python agent.py
+
+Este modo ejecuta el agente inteligente con:
+- memoria de conversación
+- recuperación semántica
+- herramientas de consulta
+- toma de decisiones
+
+------------------------------------------------------------------------
+
+### Ejemplos del agente funcional
+
+Consulta con memoria:
+
+Cliente:
+¿Cuánto dura la garantía de Samsung?
+
+Luego:
+¿Y cuánto demora el despacho?
+
+El agente mantiene el contexto de la conversación.
+
+Consulta matemática:
+
+Si un producto vale 699990 y tiene 15% de descuento, cuánto queda?
+
+El agente utiliza automáticamente la herramienta calculadora.
 
 ------------------------------------------------------------------------
 
 ## Validación del sistema
 
-El evaluador podrá verificar: - Que el sistema responde correctamente -
-Que las respuestas están basadas en los documentos - Que se muestran las
-fuentes utilizadas
+El evaluador podrá verificar:
 
-Ejemplo esperado:
-
-Asistente: Los productos Samsung cuentan con 12 meses de garantía.
-
-Fuentes usadas: - garantias.txt
+- Que el sistema responde correctamente
+- Que las respuestas están basadas en documentos
+- Que el agente utiliza herramientas según la consulta
+- Que existe continuidad mediante memoria de conversación
+- Que el sistema toma decisiones según el tipo de solicitud
 
 ------------------------------------------------------------------------
 
 ## Estructura del proyecto
 
-techhogar/ ├── app.py ├── ingest.py ├── requirements.txt ├── README.md
+techhogar/ ├── agent.py ├── app.py ├── ingest.py ├── requirements.txt ├── README.md
 ├── data/ │ ├── catalogo.txt │ ├── garantias.txt │ ├── devoluciones.txt
 │ └── despachos.txt
 
