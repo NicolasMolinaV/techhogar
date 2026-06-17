@@ -5,6 +5,9 @@ import re
 
 from langchain_openai import ChatOpenAI
 from langchain_chroma import Chroma
+from langchain.tools import tool
+from langchain.agents import create_agent
+from langgraph.checkpoint.memory import InMemorySaver
 
 load_dotenv()
 
@@ -48,10 +51,6 @@ class GitHubEmbeddings:
         return self._embed([text])[0]
 
 
-# Memoria simple de conversación
-memoria = []
-
-
 def crear_retriever():
     embeddings = GitHubEmbeddings(
         model=os.getenv("EMBEDDING_MODEL"),
@@ -69,15 +68,13 @@ def crear_retriever():
 
 retriever = crear_retriever()
 
-llm = ChatOpenAI(
-    model=os.getenv("CHAT_MODEL"),
-    temperature=0,
-    api_key=os.getenv("GITHUB_TOKEN"),
-    base_url=os.getenv("GITHUB_CHAT_BASE_URL"),
-)
 
-
-def herramienta_rag(pregunta):
+@tool
+def consultar_documentos(pregunta: str) -> str:
+    """
+    Consulta documentos internos de TechHogar.
+    Útil para preguntas sobre garantías, stock, catálogo, devoluciones y despachos.
+    """
     docs = retriever.invoke(pregunta)
 
     if not docs:
@@ -91,80 +88,119 @@ def herramienta_rag(pregunta):
     return "\n\n".join(contexto)
 
 
-def herramienta_calculadora(pregunta):
-    try:
-        numeros = re.findall(r"\d+", pregunta)
-        if len(numeros) >= 2 and "%" in pregunta:
-            precio = float(numeros[0])
-            descuento = float(numeros[1])
-            resultado = precio - (precio * descuento / 100)
-            return f"El precio final con {descuento}% de descuento es {round(resultado)}."
-        return "No se pudo identificar una operación matemática válida."
-    except Exception:
-        return "No se pudo realizar el cálculo."
-    
-def herramienta_escritura(pregunta):
+@tool
+def calcular_descuento(consulta: str) -> str:
+    """
+    Calcula descuentos, precios finales y operaciones matemáticas simples.
+    Útil cuando el cliente pregunta por porcentajes, descuentos o valores finales.
+    """
+    numeros = re.findall(r"\d+", consulta)
+
+    if len(numeros) >= 2 and "%" in consulta:
+        precio = float(numeros[0])
+        descuento = float(numeros[1])
+        resultado = precio - (precio * descuento / 100)
+        return f"El precio final con {descuento}% de descuento es {round(resultado)}."
+
+    return "No se pudo identificar una operación matemática válida."
+
+
+@tool
+def generar_resumen_soporte(consulta: str) -> str:
+    """
+    Genera un resumen escrito para derivar un caso a soporte humano.
+    Útil para reclamos, problemas complejos o solicitudes de ayuda humana.
+    """
     return f"""
-Resumen generado para derivación a soporte humano:
+Resumen para soporte humano:
 
-El cliente realizó la siguiente solicitud:
-{pregunta}
+Solicitud del cliente:
+{consulta}
 
-El caso debe ser revisado por un agente especializado.
+Recomendación:
+Derivar el caso a un agente especializado para revisión.
 """
 
 
-def decidir_herramienta(pregunta):
-    pregunta_lower = pregunta.lower()
+@tool
+def planificar_atencion(consulta: str) -> str:
+    """
+    Genera un plan breve de atención para consultas con múltiples pasos.
+    Útil cuando el caso requiere ordenar acciones antes de responder.
+    """
+    return f"""
+Plan de atención:
+1. Identificar la intención principal del cliente.
+2. Determinar si requiere consulta documental, cálculo o derivación.
+3. Usar la herramienta correspondiente.
+4. Generar una respuesta clara y basada en evidencia.
+5. Mantener continuidad usando memoria conversacional si existen mensajes previos.
 
-    if any(palabra in pregunta_lower for palabra in ["reclamo", "problema", "soporte", "ayuda humana", "derivar"]):
-        return "escritura"
-
-    if any(palabra in pregunta_lower for palabra in ["descuento", "%", "calcula", "precio final"]):
-        return "calculadora"
-
-    if any(palabra in pregunta_lower for palabra in ["y cuánto", "y cuanto", "y eso", "también", "tambien", "y el", "y la"]):
-        return "memoria_rag"
-
-    if any(palabra in pregunta_lower for palabra in ["garantía", "garantia", "stock", "devolución", "devolucion", "despacho", "producto", "iphone", "samsung"]):
-        return "rag"
-
-    return "rag"
-
-
-def generar_respuesta(pregunta, contexto, herramienta_usada):
-    historial = "\n".join(memoria[-6:])
-
-    prompt = f"""
-Eres un agente inteligente de atención al cliente de TechHogar S.A.
-
-Debes responder en español, de forma clara y breve.
-No inventes información.
-Usa solo el contexto entregado.
-Si no existe información suficiente, indícalo.
-
-Historial de conversación:
-{historial}
-
-Herramienta utilizada:
-{herramienta_usada}
-
-Pregunta del cliente:
-{pregunta}
-
-Contexto recuperado:
-{contexto}
-
-Respuesta:
+Consulta analizada:
+{consulta}
 """
 
-    response = llm.invoke(prompt)
-    return response.content
+
+llm = ChatOpenAI(
+    model=os.getenv("CHAT_MODEL"),
+    temperature=0,
+    api_key=os.getenv("GITHUB_TOKEN"),
+    base_url=os.getenv("GITHUB_CHAT_BASE_URL"),
+)
+
+tools = [
+    consultar_documentos,
+    calcular_descuento,
+    generar_resumen_soporte,
+    planificar_atencion
+]
+
+system_prompt = """
+Eres un agente funcional de atención al cliente de TechHogar S.A.
+
+Debes razonar qué herramienta usar según la consulta del usuario.
+No uses reglas fijas por palabras clave; analiza la intención de la consulta.
+
+Herramientas disponibles:
+- consultar_documentos: para garantías, stock, catálogo, devoluciones y despachos.
+- calcular_descuento: para descuentos, porcentajes y precios finales.
+- generar_resumen_soporte: para reclamos, problemas complejos o derivación humana.
+- planificar_atencion: para organizar casos con múltiples pasos o explicar el plan de acción.
+
+Reglas:
+- Responde siempre en español.
+- No inventes información.
+- Si necesitas información documental, usa consultar_documentos.
+- Si necesitas calcular, usa calcular_descuento.
+- Si el caso requiere derivación, usa generar_resumen_soporte.
+- Si el caso tiene varias etapas, usa planificar_atencion.
+- Usa la memoria conversacional para mantener continuidad.
+"""
+
+checkpointer = InMemorySaver()
+
+agent = create_agent(
+    model=llm,
+    tools=tools,
+    system_prompt=system_prompt,
+    checkpointer=checkpointer
+)
+
+
+def mostrar_ultima_respuesta(resultado):
+    ultimo = resultado["messages"][-1]
+    return ultimo.content
 
 
 def main():
-    print("Agente funcional TechHogar listo.")
+    print("Agente funcional TechHogar con LangChain listo.")
     print("Escribe 'salir' para terminar.\n")
+
+    thread_config = {
+        "configurable": {
+            "thread_id": "techhogar-demo"
+        }
+    }
 
     while True:
         pregunta = input("Cliente: ").strip()
@@ -172,27 +208,13 @@ def main():
         if pregunta.lower() == "salir":
             break
 
-        herramienta = decidir_herramienta(pregunta)
+        resultado = agent.invoke(
+            {"messages": [{"role": "user", "content": pregunta}]},
+            config=thread_config
+        )
 
-        if herramienta == "escritura":
-            contexto = herramienta_escritura(pregunta)
+        respuesta = mostrar_ultima_respuesta(resultado)
 
-        elif herramienta == "calculadora":
-            contexto = herramienta_calculadora(pregunta)
-
-        elif herramienta == "memoria_rag":
-            pregunta_con_memoria = " ".join(memoria[-4:]) + " " + pregunta
-            contexto = herramienta_rag(pregunta_con_memoria)
-
-        else:
-            contexto = herramienta_rag(pregunta)
-
-        respuesta = generar_respuesta(pregunta, contexto, herramienta)
-
-        memoria.append(f"Cliente: {pregunta}")
-        memoria.append(f"Agente: {respuesta}")
-
-        print("\nHerramienta usada:", herramienta)
         print("\nAgente:")
         print(respuesta)
         print("\n" + "-" * 50 + "\n")
