@@ -2,12 +2,15 @@ from dotenv import load_dotenv
 import os
 import requests
 import re
+import time
 
 from langchain_openai import ChatOpenAI
 from langchain_chroma import Chroma
 from langchain.tools import tool
 from langchain.agents import create_agent
 from langgraph.checkpoint.memory import InMemorySaver
+
+from observability import registrar_ejecucion
 
 load_dotenv()
 
@@ -192,8 +195,25 @@ def mostrar_ultima_respuesta(resultado):
     return ultimo.content
 
 
+def obtener_herramientas_usadas(resultado):
+    herramientas = []
+
+    for mensaje in resultado.get("messages", []):
+        tool_calls = getattr(mensaje, "tool_calls", None)
+
+        if tool_calls:
+            for llamada in tool_calls:
+                nombre = llamada.get("name", "herramienta_desconocida")
+                herramientas.append(nombre)
+
+    if not herramientas:
+        return "sin_tool_detectada"
+
+    return ", ".join(sorted(set(herramientas)))
+
+
 def main():
-    print("Agente funcional TechHogar con LangChain listo.")
+    print("Agente funcional TechHogar con observabilidad listo.")
     print("Escribe 'salir' para terminar.\n")
 
     thread_config = {
@@ -208,16 +228,56 @@ def main():
         if pregunta.lower() == "salir":
             break
 
-        resultado = agent.invoke(
-            {"messages": [{"role": "user", "content": pregunta}]},
-            config=thread_config
-        )
+        inicio = time.perf_counter()
 
-        respuesta = mostrar_ultima_respuesta(resultado)
+        try:
+            resultado = agent.invoke(
+                {"messages": [{"role": "user", "content": pregunta}]},
+                config=thread_config
+            )
 
-        print("\nAgente:")
-        print(respuesta)
-        print("\n" + "-" * 50 + "\n")
+            fin = time.perf_counter()
+            latencia = fin - inicio
+
+            respuesta = mostrar_ultima_respuesta(resultado)
+            herramientas_usadas = obtener_herramientas_usadas(resultado)
+
+            registrar_ejecucion(
+                pregunta=pregunta,
+                respuesta=respuesta,
+                latencia=latencia,
+                herramientas_usadas=herramientas_usadas,
+                estado="OK",
+                error=""
+            )
+
+            print("\nHerramientas usadas:")
+            print(herramientas_usadas)
+
+            print("\nLatencia:")
+            print(f"{round(latencia, 3)} segundos")
+
+            print("\nAgente:")
+            print(respuesta)
+            print("\n" + "-" * 50 + "\n")
+
+        except Exception as e:
+            fin = time.perf_counter()
+            latencia = fin - inicio
+            error = str(e)
+
+            registrar_ejecucion(
+                pregunta=pregunta,
+                respuesta="",
+                latencia=latencia,
+                herramientas_usadas="error",
+                estado="ERROR",
+                error=error
+            )
+
+            print("\nOcurrió un error durante la ejecución del agente:")
+            print(error)
+            print("\n" + "-" * 50 + "\n")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,3 @@
+pregunta_1,respuesta_1,pregunta_2,respuesta_2,palabras_clave_esperadas,consistencia_porcentaje,estado
+¿Cuánto dura la garantía de Samsung?,,¿Qué garantía tienen los productos Samsung?,,"12 meses, garantía, Samsung",0,"ERROR: Too many requests. For more on scraping GitHub and how it may affect your rights, please review our Terms of Service (https://docs.github.com/en/site-policy/github-terms/github-terms-of-service)."
+¿Cuánto demora el despacho a regiones?,,¿En cuántos días llega un pedido a regiones?,,"3, 5, días, regiones",0,"ERROR: Too many requests. For more on scraping GitHub and how it may affect your rights, please review our Terms of Service (https://docs.github.com/en/site-policy/github-terms/github-terms-of-service)."

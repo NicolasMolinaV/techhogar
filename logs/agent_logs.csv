@@ -1,0 +1,14 @@
+timestamp,pregunta,respuesta,herramientas_usadas,latencia_segundos,estado,error,longitud_respuesta
+2026-06-17 19:23:55,¿Cuánto dura la garantía de Samsung?,La garantía de los productos Samsung en TechHogar es de 12 meses y cubre fallas de fabricación. No incluye daños por mal uso o manipulación indebida.,consultar_documentos,5.292,OK,,149
+2026-06-17 19:23:59,"Si un producto vale 699990 y tiene 15% de descuento, cuánto queda?","El precio final del producto, después de aplicar un descuento del 15%, sería de $594.992.","calcular_descuento, consultar_documentos",2.777,OK,,89
+2026-06-17 19:24:09,Tengo un reclamo y necesito ayuda humana,He generado un resumen de tu caso para derivarlo a un agente especializado. Pronto recibirás asistencia humana para resolver tu reclamo.,"calcular_descuento, consultar_documentos, generar_resumen_soporte",3.841,OK,,136
+2026-06-17 19:24:31,"Necesito resolver un caso donde quiero saber garantía, despacho y posible derivación","Aquí tienes la información solicitada:
+
+1. **Garantía**: Todos los productos cuentan con una garantía mínima de 12 meses, que cubre fallas de fabricación. No incluye daños por mal uso o manipulación indebida.
+
+2. **Despacho**:
+   - Región Metropolitana: entre 24 y 48 horas.
+   - Regiones: entre 3 y 5 días hábiles.
+   - El costo del despacho depende de la ubicación del cliente.
+
+Además, he generado un resumen para derivar tu caso a un agente especializado si necesitas asistencia adicional. Pronto recibirás ayuda humana para resolver cualquier detalle.","calcular_descuento, consultar_documentos, generar_resumen_soporte, planificar_atencion",17.349,OK,,556
