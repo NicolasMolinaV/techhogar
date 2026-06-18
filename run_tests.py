@@ -1,23 +1,15 @@
 import csv
 import os
-import time
-
-from agent import agent, mostrar_ultima_respuesta, obtener_herramientas_usadas
+import pandas as pd
 
 LOG_DIR = "logs"
+AGENT_LOGS = os.path.join(LOG_DIR, "agent_logs.csv")
 RESULTS_FILE = os.path.join(LOG_DIR, "evaluation_results.csv")
-CONSISTENCY_FILE = os.path.join(LOG_DIR, "consistency_results.csv")
-
-ESPERA_ENTRE_PRUEBAS = 20
-MAX_REINTENTOS = 3
-
-
-def crear_carpeta_logs():
-    os.makedirs(LOG_DIR, exist_ok=True)
+SUMMARY_FILE = os.path.join(LOG_DIR, "metrics_summary.csv")
 
 
 def calcular_precision(respuesta, palabras_clave):
-    respuesta_lower = respuesta.lower()
+    respuesta_lower = str(respuesta).lower()
     aciertos = 0
 
     for palabra in palabras_clave:
@@ -30,54 +22,29 @@ def calcular_precision(respuesta, palabras_clave):
     return round((aciertos / len(palabras_clave)) * 100, 2)
 
 
-def ejecutar_consulta(pregunta, thread_id):
-    for intento in range(1, MAX_REINTENTOS + 1):
-        try:
-            inicio = time.perf_counter()
+def evaluar_precision_desde_logs():
+    df = pd.read_csv(AGENT_LOGS)
 
-            resultado = agent.invoke(
-                {"messages": [{"role": "user", "content": pregunta}]},
-                config={"configurable": {"thread_id": thread_id}}
-            )
-
-            fin = time.perf_counter()
-            latencia = round(fin - inicio, 3)
-
-            respuesta = mostrar_ultima_respuesta(resultado)
-            herramientas = obtener_herramientas_usadas(resultado)
-
-            return respuesta, herramientas, latencia
-
-        except Exception as e:
-            error = str(e)
-
-            if "Too many requests" in error:
-                espera = intento * 60
-                print(f"Límite de GitHub alcanzado. Esperando {espera} segundos...")
-                time.sleep(espera)
-            else:
-                raise e
-
-    raise Exception("No se pudo ejecutar la consulta por límite de solicitudes de GitHub Models.")
-
-
-def pruebas_precision():
     casos = [
         {
-            "pregunta": "¿Cuánto dura la garantía de Samsung?",
-            "palabras_clave": ["12 meses", "garantía", "Samsung"],
+            "tipo": "garantia",
+            "buscar": "garantía",
+            "palabras_clave": ["12 meses", "garantía"],
         },
         {
-            "pregunta": "¿Cuánto demora el despacho a regiones?",
-            "palabras_clave": ["3", "5", "días", "regiones"],
+            "tipo": "descuento",
+            "buscar": "descuento",
+            "palabras_clave": ["594", "15", "descuento"],
         },
         {
-            "pregunta": "Si un producto vale 699990 y tiene 15% de descuento, cuánto queda?",
-            "palabras_clave": ["594", "descuento", "15"],
+            "tipo": "reclamo",
+            "buscar": "reclamo",
+            "palabras_clave": ["agente", "especializado"],
         },
         {
-            "pregunta": "Tengo un reclamo y necesito ayuda humana",
-            "palabras_clave": ["resumen", "agente", "especializado"],
+            "tipo": "caso_multiple",
+            "buscar": "garantía, despacho",
+            "palabras_clave": ["garantía", "despacho", "12 meses", "3", "5"],
         },
     ]
 
@@ -85,136 +52,110 @@ def pruebas_precision():
         writer = csv.writer(file)
 
         writer.writerow([
+            "tipo",
             "pregunta",
             "respuesta",
-            "herramientas_usadas",
-            "latencia_segundos",
             "palabras_clave_esperadas",
             "precision_porcentaje",
             "estado"
         ])
 
-        for i, caso in enumerate(casos, start=1):
-            try:
-                respuesta, herramientas, latencia = ejecutar_consulta(
-                    caso["pregunta"],
-                    thread_id=f"precision-test-{i}"
+        for caso in casos:
+            fila_encontrada = None
+
+            for _, fila in df.iterrows():
+                pregunta = str(fila["pregunta"]).lower()
+
+                if caso["tipo"] == "garantia" and "garantía" in pregunta:
+                    fila_encontrada = fila
+                    break
+
+                if caso["tipo"] == "descuento" and "descuento" in pregunta:
+                    fila_encontrada = fila
+                    break
+
+                if caso["tipo"] == "reclamo" and "reclamo" in pregunta:
+                    fila_encontrada = fila
+                    break
+
+                if caso["tipo"] == "caso_multiple" and "garantía" in pregunta and "despacho" in pregunta:
+                    fila_encontrada = fila
+                    break
+
+            if fila_encontrada is not None:
+                precision = calcular_precision(
+                    fila_encontrada["respuesta"],
+                    caso["palabras_clave"]
                 )
 
-                precision = calcular_precision(respuesta, caso["palabras_clave"])
-
                 writer.writerow([
-                    caso["pregunta"],
-                    respuesta,
-                    herramientas,
-                    latencia,
+                    caso["tipo"],
+                    fila_encontrada["pregunta"],
+                    fila_encontrada["respuesta"],
                     ", ".join(caso["palabras_clave"]),
                     precision,
                     "OK"
                 ])
 
-                print(f"Prueba precisión {i}: {precision}%")
-                time.sleep(ESPERA_ENTRE_PRUEBAS)
+                print(f"Precisión {caso['tipo']}: {precision}%")
 
-            except Exception as e:
+            else:
                 writer.writerow([
-                    caso["pregunta"],
+                    caso["tipo"],
                     "",
                     "",
-                    0,
                     ", ".join(caso["palabras_clave"]),
                     0,
-                    f"ERROR: {str(e)}"
+                    "NO ENCONTRADO"
                 ])
 
-                print(f"Error en prueba precisión {i}: {e}")
+                print(f"Precisión {caso['tipo']}: no encontrado")
 
 
-def pruebas_consistencia():
-    pares = [
-        {
-            "pregunta_1": "¿Cuánto dura la garantía de Samsung?",
-            "pregunta_2": "¿Qué garantía tienen los productos Samsung?",
-            "palabras_clave": ["12 meses", "garantía", "Samsung"],
-        },
-        {
-            "pregunta_1": "¿Cuánto demora el despacho a regiones?",
-            "pregunta_2": "¿En cuántos días llega un pedido a regiones?",
-            "palabras_clave": ["3", "5", "días", "regiones"],
-        },
-    ]
+def generar_resumen_metricas():
+    df = pd.read_csv(AGENT_LOGS)
 
-    with open(CONSISTENCY_FILE, mode="w", newline="", encoding="utf-8") as file:
+    total_consultas = len(df)
+    latencia_promedio = round(df["latencia_segundos"].mean(), 3)
+    latencia_maxima = round(df["latencia_segundos"].max(), 3)
+    errores = len(df[df["estado"] == "ERROR"])
+    tasa_error = round((errores / total_consultas) * 100, 2) if total_consultas > 0 else 0
+    longitud_promedio = round(df["longitud_respuesta"].mean(), 2)
+
+    consulta_lenta = df.loc[df["latencia_segundos"].idxmax()]["pregunta"]
+
+    with open(SUMMARY_FILE, mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
 
-        writer.writerow([
-            "pregunta_1",
-            "respuesta_1",
-            "pregunta_2",
-            "respuesta_2",
-            "palabras_clave_esperadas",
-            "consistencia_porcentaje",
-            "estado"
-        ])
+        writer.writerow(["metrica", "valor"])
+        writer.writerow(["total_consultas", total_consultas])
+        writer.writerow(["latencia_promedio", latencia_promedio])
+        writer.writerow(["latencia_maxima", latencia_maxima])
+        writer.writerow(["errores", errores])
+        writer.writerow(["tasa_error", tasa_error])
+        writer.writerow(["longitud_promedio_respuesta", longitud_promedio])
+        writer.writerow(["consulta_mas_lenta", consulta_lenta])
 
-        for i, par in enumerate(pares, start=1):
-            try:
-                respuesta_1, herramientas_1, latencia_1 = ejecutar_consulta(
-                    par["pregunta_1"],
-                    thread_id=f"consistency-test-{i}-a"
-                )
-
-                time.sleep(ESPERA_ENTRE_PRUEBAS)
-
-                respuesta_2, herramientas_2, latencia_2 = ejecutar_consulta(
-                    par["pregunta_2"],
-                    thread_id=f"consistency-test-{i}-b"
-                )
-
-                precision_1 = calcular_precision(respuesta_1, par["palabras_clave"])
-                precision_2 = calcular_precision(respuesta_2, par["palabras_clave"])
-
-                consistencia = round((precision_1 + precision_2) / 2, 2)
-
-                writer.writerow([
-                    par["pregunta_1"],
-                    respuesta_1,
-                    par["pregunta_2"],
-                    respuesta_2,
-                    ", ".join(par["palabras_clave"]),
-                    consistencia,
-                    "OK"
-                ])
-
-                print(f"Prueba consistencia {i}: {consistencia}%")
-                time.sleep(ESPERA_ENTRE_PRUEBAS)
-
-            except Exception as e:
-                writer.writerow([
-                    par["pregunta_1"],
-                    "",
-                    par["pregunta_2"],
-                    "",
-                    ", ".join(par["palabras_clave"]),
-                    0,
-                    f"ERROR: {str(e)}"
-                ])
-
-                print(f"Error en prueba consistencia {i}: {e}")
+    print("\nResumen de métricas:")
+    print(f"Total consultas: {total_consultas}")
+    print(f"Latencia promedio: {latencia_promedio} segundos")
+    print(f"Latencia máxima: {latencia_maxima} segundos")
+    print(f"Errores: {errores}")
+    print(f"Tasa de error: {tasa_error}%")
+    print(f"Consulta más lenta: {consulta_lenta}")
 
 
 def main():
-    crear_carpeta_logs()
+    if not os.path.exists(AGENT_LOGS):
+        print("No existe logs/agent_logs.csv. Primero ejecuta agent.py.")
+        return
 
-    print("Ejecutando pruebas de precisión...")
-    pruebas_precision()
+    evaluar_precision_desde_logs()
+    generar_resumen_metricas()
 
-    print("\nEjecutando pruebas de consistencia...")
-    pruebas_consistencia()
-
-    print("\nPruebas finalizadas.")
-    print(f"Resultados guardados en: {RESULTS_FILE}")
-    print(f"Resultados guardados en: {CONSISTENCY_FILE}")
+    print("\nArchivos generados:")
+    print(RESULTS_FILE)
+    print(SUMMARY_FILE)
 
 
 if __name__ == "__main__":

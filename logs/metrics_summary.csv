@@ -1,0 +1,8 @@
+metrica,valor
+total_consultas,4
+latencia_promedio,7.315
+latencia_maxima,17.349
+errores,0
+tasa_error,0.0
+longitud_promedio_respuesta,232.5
+consulta_mas_lenta,"Necesito resolver un caso donde quiero saber garantía, despacho y posible derivación"
