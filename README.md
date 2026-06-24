@@ -24,7 +24,7 @@ La versión de agente funcional fue implementada con LangChain Agents mediante `
 
 2. Clonar el repositorio:
 
-git clone https://github.com/NicolasMolinaV/techhogar.git
+git clone https://github.com/jcueto001/Techhogar
 
 3. Entrar a la carpeta del proyecto:
 

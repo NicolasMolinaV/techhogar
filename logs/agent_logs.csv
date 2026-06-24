@@ -12,3 +12,4 @@ timestamp,pregunta,respuesta,herramientas_usadas,latencia_segundos,estado,error,
    - El costo del despacho depende de la ubicación del cliente.
 
 Además, he generado un resumen para derivar tu caso a un agente especializado si necesitas asistencia adicional. Pronto recibirás ayuda humana para resolver cualquier detalle.","calcular_descuento, consultar_documentos, generar_resumen_soporte, planificar_atencion",17.349,OK,,556
+2026-06-23 17:04:33,uál es el porcentaje de descuento si algo vale 1000 y tengo 20%?,El porcentaje de descuento del 20% en un producto que vale 1000 reduce el precio final a 800.,calcular_descuento,3.737,OK,,93

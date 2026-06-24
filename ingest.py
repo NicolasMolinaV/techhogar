@@ -8,7 +8,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
 
 
-load_dotenv()
+load_dotenv(override=True)
 
 DATA_DIR = Path("data")
 PERSIST_DIR = "chroma_db"
@@ -30,7 +30,7 @@ class GitHubEmbeddings:
             headers={
                 "Accept": "application/vnd.github+json",
                 "Authorization": f"Bearer {self.token}",
-                "X-GitHub-Api-Version": "2026-03-10",
+                "X-GitHub-Api-Version": "2022-11-28",
                 "Content-Type": "application/json",
             },
             json={
